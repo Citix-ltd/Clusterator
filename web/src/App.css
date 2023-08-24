@@ -1,0 +1,30 @@
+.main {
+  display : flex;
+  flex-direction: row;
+  align-items: space-between;
+  justify-content: space-between;
+  padding : 30px;
+  gap: 20px;
+}
+
+.menu {
+  padding-top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 10%;
+}
+
+.gallery {
+  padding: 20px;
+  width : 50%;
+}
+.ungrouped { 
+  padding: 20px;
+  width : 50%;
+}
+
+.flex-wrap {
+  display : flex;
+  flex-wrap: wrap;
+}
