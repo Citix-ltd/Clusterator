@@ -12,10 +12,30 @@ import Divider from '@mui/material/Divider';
 const ENDPOINT = "http://127.0.0.1:3000";
 
 function Image(props) {
-  console.log(props)
-  return <div onClick = {props.onClick}>
-    <img src = {ENDPOINT + "/file/" + props.class +"/" + props.filename}></img>
-  </div>
+  const containerStyle = {
+    width: 128,
+    height: 128,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  };
+
+  const imageStyle = {
+    maxWidth: '100%',
+    maxHeight: '100%',
+    display: 'block',
+  };
+
+  return (
+    <div onClick={props.onClick} style={containerStyle}>
+      <img
+        style={imageStyle}
+        src={ENDPOINT + "/file/" + props.class + "/" + props.filename}
+        alt="Image"
+      />
+    </div>
+  );
 }
 
 

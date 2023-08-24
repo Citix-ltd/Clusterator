@@ -1,0 +1,9 @@
+flask
+flask-cors
+pydantic
+mypy==1.4.1
+mypy-extensions==1.0.0
+flake8==6.0.0
+pytest==7.4.0
+numpy
+opencv-python
