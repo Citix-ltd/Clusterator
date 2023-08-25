@@ -2,13 +2,22 @@ from flask import Flask, render_template, send_from_directory, request
 import random
 from flask_cors import CORS
 import shutil
-
 import os
+
+from sorter import generate_embeddings, find_close_to_many, save_embeddings, read_embeddings
 
 
 DATA_DIR = "data/"
 UNGROUPED_CLASS = "Ungrouped"
 FILES_LIMIT = 256
+
+
+embeddings_cache = "embeddings.h5"
+if os.path.exists(embeddings_cache):
+    embeddings = read_embeddings(embeddings_cache)
+else:
+    embeddings = generate_embeddings(DATA_DIR + UNGROUPED_CLASS)
+    save_embeddings(embeddings_cache, embeddings)
 
 
 app = Flask(__name__)
@@ -41,14 +50,13 @@ def send_report(path):
 
 @app.route('/sort', methods= ["POST"])
 def sort_files():
-    print(request)
     data = request.get_json()
-   
-    print(data["files"])
-    res = os.listdir(DATA_DIR + UNGROUPED_CLASS)
-    res = [{"file" : i, "score" : random.random()} for i in res]
-    res = list(reversed(sorted(res, key = lambda x : x["score"])))[:FILES_LIMIT]
-    return {"files" : res}
+
+    res = find_close_to_many(data["files"], embeddings)
+    res = list([r[0] for r in res])[:FILES_LIMIT]
+    res = {"files" : res}
+    print('req', data, 'res', res)
+    return res
 
 
 @app.route('/move', methods= ["POST"])
@@ -61,4 +69,4 @@ def move_files():
 
 
 if __name__ == "__main__":
-    app.run(host = "0.0.0.0", port = 3000)
+    app.run(host = "0.0.0.0", port = 3001)

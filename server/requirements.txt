@@ -7,3 +7,10 @@ flake8==6.0.0
 pytest==7.4.0
 numpy
 opencv-python
+Pillow==10.0.0
+torch
+torchvision
+tqdm
+timm
+h5py
+git+https://github.com/deepglint/unicom.git

@@ -9,7 +9,7 @@ import Divider from '@mui/material/Divider';
 
 
 
-const ENDPOINT = "http://127.0.0.1:3000";
+const ENDPOINT = "http://127.0.0.1:3001";
 
 function Image(props) {
   const containerStyle = {
@@ -46,6 +46,19 @@ function App(){
   const [cls, setCls] = React.useState("");
   const [selected, setSelected] = React.useState([]);
   const classRef = React.useRef('')
+
+  React.useEffect(() => {
+    console.log('xkty', selected);
+    fetch(ENDPOINT + "/sort", {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: selected })
+    }).then(response => response.json()).then(
+      data => setUngrouped(data["files"].map((i) => {
+        return i
+      }))
+    )
+  }, [selected]);
 
   React.useEffect(() => {
     fetch(ENDPOINT + "/classes").then(response => response.json()).then(
@@ -142,17 +155,6 @@ function App(){
                     setSelected([...selected, x])
                   }
                   setUngrouped(ungrouped.filter((i) => {return i != x}));
-                  fetch(ENDPOINT + "/sort", {
-                    method: 'post',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ files: selected})
-                  }).then(response => response.json()).then(
-                    data => setUngrouped(data["files"].filter((i) => {
-                      return !selected.includes(i["file"]) && i["file"] != x
-                    }).map((i) => {
-                      return i["file"]
-                    }))
-                  )
                 }
               }
               
