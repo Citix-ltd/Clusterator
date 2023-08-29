@@ -44,8 +44,8 @@ def get_class_files(class_id: str):
 
 
 @app.route('/file/<path:path>', methods = ["GET"])
-def send_report(path):
-    return send_from_directory(DATA_DIR, path)
+def serve_file(path):
+    return send_from_directory(DATA_DIR, path, max_age=60*60*24)
 
 
 @app.route('/sort', methods=["POST"])
