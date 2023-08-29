@@ -65,9 +65,9 @@ def find_close(name: str, embeddings: tuple[list[str], np.ndarray]) -> list[tupl
     names, embeddings = embeddings
     idx = names.index(name)
     scores = np.dot(embeddings, embeddings[idx])
-    res = [(names[i], scores[i]) for i in range(len(names)) if i != idx]
-    res = [i for i in res if i[0] != name]
-    return res
+    result = [(names[i], scores[i]) for i in range(len(names)) if i != idx]
+    sort = sorted(result, key=lambda x: x[1], reverse=True)
+    return sort
 
 
 def merge_close(candidates: list[list[tuple[str, float]]]) -> list[tuple[str, float]]:

@@ -40,7 +40,7 @@ def create_class(class_id: str):
 @app.route('/classes/<class_id>', methods = ["GET"])
 def get_class_files(class_id: str):
     res = os.listdir(DATA_DIR + class_id)[:FILES_LIMIT]
-    return {"filenames" : res} 
+    return {"files" : res} 
 
 
 @app.route('/file/<path:path>', methods = ["GET"])
@@ -48,14 +48,13 @@ def send_report(path):
     return send_from_directory(DATA_DIR, path)
 
 
-@app.route('/sort', methods= ["POST"])
+@app.route('/sort', methods=["POST"])
 def sort_files():
     data = request.get_json()
 
     res = find_close_to_many(data["files"], embeddings)
     res = list([r[0] for r in res])[:FILES_LIMIT]
     res = {"files" : res}
-    print('req', data, 'res', res)
     return res
 
 
