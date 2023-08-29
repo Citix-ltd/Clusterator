@@ -32,11 +32,17 @@ function Image(props: ImageProps) {
     display: 'block',
   };
 
+  let imgSrc: string;
+  if (props.filename == null) {
+    imgSrc = "/icon-image-placeholder.svg";
+  } else {
+    imgSrc = ENDPOINT + "/file/" + props.class + "/" + props.filename;
+  }
   return (
     <div onClick={props.onClick} style={containerStyle}>
       <img
         style={imageStyle}
-        src={ENDPOINT + "/file/" + props.class + "/" + props.filename}
+        src={imgSrc}
         alt="Image"
       />
     </div>

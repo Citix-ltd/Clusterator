@@ -27,7 +27,7 @@ CORS(app)
 @app.route('/classes', methods = ["GET"])
 def get_classes():
     res = os.listdir(DATA_DIR)
-    res = [{"class" : i, "preview" : os.listdir(DATA_DIR + i)[0] if len(os.listdir(DATA_DIR + i))> 0 else None} for i in res if i != UNGROUPED_CLASS]
+    res = [{"name" : i, "preview" : os.listdir(DATA_DIR + i)[0] if len(os.listdir(DATA_DIR + i))> 0 else None} for i in res if i != UNGROUPED_CLASS]
     return {"classes" : res}
 
 
