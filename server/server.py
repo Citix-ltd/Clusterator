@@ -52,7 +52,7 @@ def serve_file(path):
 def sort_files():
     data = request.get_json()
 
-    res = find_close_to_many(data["files"], embeddings)
+    res = find_close_to_many(set(data["files"]), embeddings)
     res = list([r[0] for r in res])[:FILES_LIMIT]
     res = {"files" : res}
     return res
