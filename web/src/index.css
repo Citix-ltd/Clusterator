@@ -11,3 +11,20 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.ungrouped {
+  border-color: transparent;
+  outline: none;
+}
+
+.selection-area {
+  background: rgba(46, 115, 252, 0.11);
+  border: 2px solid rgba(98, 155, 255, 0.81);
+  border-radius: 0.1em;
+}
+.selectable-container {
+  user-select: none;
+}
+.selected {
+  background: hsl(200, 80%, 65%);
+}

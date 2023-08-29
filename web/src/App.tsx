@@ -1,8 +1,6 @@
-import React from 'react'
+import React, { Component, FunctionComponent } from 'react'
+import SelectionArea, { SelectionEvent } from '@viselect/react';
 import './App.css';
-import Box from '@mui/material/Box';
-import Paper from '@mui/material/Paper';
-import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
@@ -12,41 +10,47 @@ import Divider from '@mui/material/Divider';
 const ENDPOINT = "http://127.0.0.1:3001";
 
 interface ImageProps {
-  onClick?: () => void;
-  class: string;
+  label: string;
+  isSelected?: boolean;
   filename?: string;
+  onClick?: () => void;
 }
-function Image(props: ImageProps) {
-  const containerStyle = {
-    width: 128,
-    height: 128,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  };
 
-  const imageStyle = {
-    maxWidth: '100%',
-    maxHeight: '100%',
-    display: 'block',
-  };
+class Image extends Component<ImageProps> {
+  render() {
+    const containerStyle = {
+      width: 128,
+      height: 128,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+    };
 
-  let imgSrc: string;
-  if (props.filename == null) {
-    imgSrc = "/icon-image-placeholder.svg";
-  } else {
-    imgSrc = ENDPOINT + "/file/" + props.class + "/" + props.filename;
+    const imageStyle = {
+      maxWidth: '100%',
+      maxHeight: '100%',
+      display: 'block',
+    };
+
+    let imgSrc: string;
+    if (this.props.filename == null) {
+      imgSrc = "/icon-image-placeholder.svg";
+    } else {
+      imgSrc = ENDPOINT + "/file/" + this.props.label + "/" + this.props.filename;
+    }
+
+    return (
+      <div onClick={this.props.onClick} style={containerStyle}>
+        <img
+          style={imageStyle}
+          src={imgSrc}
+          alt="Image"
+          draggable="false"
+        />
+      </div>
+    );
   }
-  return (
-    <div onClick={props.onClick} style={containerStyle}>
-      <img
-        style={imageStyle}
-        src={imgSrc}
-        alt="Image"
-      />
-    </div>
-  );
 }
 
 
@@ -67,7 +71,8 @@ function App() {
   const [classes, setClasses] = React.useState<LabelClass[]>([]);
   const [ungrouped, setUngrouped] = React.useState<string[]>([]);
   const [activeClass, setActiveClass] = React.useState<LabelClass | null>(null);
-  const [selected, setSelected] = React.useState<string[]>([]);
+  const [annotated, setAnnotated] = React.useState<string[]>([]);
+  const [selected, setSelected] = React.useState<Set<string>>(() => new Set());
   const inputClassName = React.useRef<HTMLInputElement>();
 
   /*
@@ -97,11 +102,11 @@ function App() {
     fetch(ENDPOINT + "/sort", {
       method: 'post',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: selected })
+      body: JSON.stringify({ files: annotated })
     }).then(response => response.json()).then(
       data => setUngrouped(data["files"])
     )
-  }, [selected]);
+  }, [annotated]);
   function onCreateNewClassClick() {
     const class_name = inputClassName.current?.value;
     if (class_name === undefined || class_name.length === 0) {
@@ -118,22 +123,50 @@ function App() {
     fetch(ENDPOINT + "/move", {
       method: "post",
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: selected.map((i) => { return { "file": i } }), class: activeClass })
+      body: JSON.stringify({ files: annotated.map((i) => { return { "file": i } }), class: activeClass })
     }).then(() => {
 
       fetch(ENDPOINT + "/classes").then(response => response.json()).then(
         data => { setClasses(data["classes"]); setActiveClass(data["classes"][0]["class"]) }
       )
-      setSelected([]);
+      setAnnotated([]);
     })
   }
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter') return;
+    const newAnnotated = [...annotated, ...Array.from(selected)];
+    setAnnotated(newAnnotated);
+    setSelected(new Set());
+  };
   function onUngroupedClicked(filename: string) {
-    if (selected.includes(filename)) {
+    if (annotated.includes(filename)) {
       return;
     }
-    setSelected([...selected, filename])
+    setAnnotated([...annotated, filename])
     setUngrouped(ungrouped.filter((i) => { return i != filename }));
   }
+
+  /*
+    Selection
+  */
+  const extractIds = (els: Element[]): string[] =>
+    els.map(v => v.getAttribute('data-key'))
+      .filter(Boolean)
+      .map(String);
+  const onStart = ({ event, selection }: SelectionEvent) => {
+    if (!event?.ctrlKey && !event?.metaKey) {
+      selection.clearSelection();
+      setSelected(() => new Set());
+    }
+  };
+  const onMove = ({ store: { changed: { added, removed } } }: SelectionEvent) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      extractIds(added).forEach(id => next.add(id));
+      extractIds(removed).forEach(id => next.delete(id));
+      return next;
+    });
+  };
 
   return (
     <div className='main'>
@@ -151,7 +184,7 @@ function App() {
               return <div key={x.name} onClick={() => { setActiveClass(x); }}>
                 {x.name === activeClass?.name ? <b>{x.name}</b> : x.name}
                 <Image
-                  class={x.name}
+                  label={x.name}
                   filename={x.preview}
                 />
               </div>
@@ -160,31 +193,39 @@ function App() {
         </div>
       </div>
       <Divider orientation="vertical" flexItem />
-      <div className='ungrouped'>
+      <div className='ungrouped' onKeyDown={handleKeyPress} tabIndex={0}>
         <h2>Ungrouped</h2>
         <div className="flex-wrap">
           {
-            selected.map((x) => {
+            annotated.map((x) => {
               return (
                 <div key={x}>
-                  <Image class="Ungrouped" filename={x} />
+                  <Image label="Ungrouped" filename={x} />
                 </div>)
             })
           }
         </div>
         <Divider flexItem />
-        <div className="flex-wrap">
+        <SelectionArea
+          className="flex-wrap selectable-container"
+          onStart={onStart}
+          onMove={onMove}
+          selectables=".selectable"
+        >
           {
             ungrouped.map((x) => {
               return (
-                <div key={x} onClick={() => { onUngroupedClicked(x); }}>
-                  <Image class="Ungrouped" filename={x} />
+                <div
+                  className={selected.has(x) ? 'selected selectable' : 'selectable'}
+                  key={x}
+                  data-key={x}
+                >
+                  <Image label="Ungrouped" filename={x} />
                 </div>)
             })
           }
-        </div>
+        </SelectionArea>
       </div>
-
     </div>
   );
 
