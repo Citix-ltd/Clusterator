@@ -120,12 +120,14 @@ function App() {
     setActiveClass(newClass)
   }
   function onMoveClicked() {
+    if (activeClass === null) {
+      return;
+    }
     fetch(ENDPOINT + "/move", {
       method: "post",
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: annotated.map((i) => { return { "file": i } }), class: activeClass })
+      body: JSON.stringify({ files: annotated, class: activeClass?.name })
     }).then(() => {
-
       fetch(ENDPOINT + "/classes").then(response => response.json()).then(
         data => { setClasses(data["classes"]); setActiveClass(data["classes"][0]["class"]) }
       )
@@ -194,7 +196,7 @@ function App() {
       </div>
       <Divider orientation="vertical" flexItem />
       <div className='ungrouped' onKeyDown={handleKeyPress} tabIndex={0}>
-        <h2>Ungrouped</h2>
+        <h2>Staged</h2>
         <div className="flex-wrap">
           {
             annotated.map((x) => {
@@ -206,6 +208,7 @@ function App() {
           }
         </div>
         <Divider flexItem />
+        <h2>Ungrouped</h2>
         <SelectionArea
           className="flex-wrap selectable-container"
           onStart={onStart}

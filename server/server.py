@@ -60,10 +60,15 @@ def sort_files():
 
 @app.route('/move', methods= ["POST"])
 def move_files():
-    print(request)
     data = request.get_json()
-    for file in data["files"]:
-        shutil.move(DATA_DIR + UNGROUPED_CLASS + "/" + file["file"], DATA_DIR + data["class"] + "/" + file["file"])
+    print(data)
+    dest_class = data["class"]
+    if not os.path.exists(DATA_DIR + dest_class):
+        os.mkdir(DATA_DIR + dest_class)
+    for filename in data["files"]:
+        from_path = os.path.join(DATA_DIR, UNGROUPED_CLASS, filename)
+        to_path = os.path.join(DATA_DIR, dest_class, filename)
+        shutil.move(from_path, to_path)
     return {"status" : "ok"}
 
 
