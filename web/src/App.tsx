@@ -7,7 +7,7 @@ import Divider from '@mui/material/Divider';
 
 
 
-const ENDPOINT = "http://127.0.0.1:3001";
+const ENDPOINT = "http://127.0.0.1:3001/api";
 
 interface ImageProps {
   label: string;
@@ -89,7 +89,7 @@ function App() {
     )
   }, [])
   React.useEffect(() => {
-    fetch(ENDPOINT + "/classes/Ungrouped").then(response => response.json()).then(json => {
+    fetch(ENDPOINT + "/classes/unsorted").then(response => response.json()).then(json => {
       const data = json as FilesResponse;
       setUngrouped(data.files);
     })
@@ -99,6 +99,9 @@ function App() {
     Actions
   */
   React.useEffect(() => {
+    if (annotated.length === 0) {
+      return;
+    }
     fetch(ENDPOINT + "/sort", {
       method: 'post',
       headers: { 'Content-Type': 'application/json' },
@@ -202,7 +205,7 @@ function App() {
             annotated.map((x) => {
               return (
                 <div key={x}>
-                  <Image label="Ungrouped" filename={x} />
+                  <Image label="unsorted" filename={x} />
                 </div>)
             })
           }
@@ -223,7 +226,7 @@ function App() {
                   key={x}
                   data-key={x}
                 >
-                  <Image label="Ungrouped" filename={x} />
+                  <Image label="unsorted" filename={x} />
                 </div>)
             })
           }

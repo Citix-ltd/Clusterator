@@ -1,70 +1,17 @@
 import numpy as np
-import os
-import h5py
+from embedder import Embeddings
 
 
-def generate_embeddings(images_dir: str) -> tuple[list[str], np.ndarray]:
-    import unicom
-    import torch
-    from torch.utils.data import DataLoader, Dataset
-    from torch.nn.functional import normalize
-    from tqdm import tqdm
-    from PIL import Image
 
-    class SimpleFolderDataset(Dataset):
-        def __init__(self, root, transform=None):
-            self.root = root
-            self.transform = transform
-            self.images = sorted(os.listdir(root))
-
-        def __getitem__(self, idx):
-            image = Image.open(os.path.join(self.root, self.images[idx]))
-            if self.transform is not None:
-                image = self.transform(image)
-            return image, self.images[idx]
-
-        def __len__(self):
-            return len(self.images)
-
-    @torch.no_grad()
-    def get_features(dataset, model):
-        all_features = []
-        for images, _ in tqdm(DataLoader(dataset, batch_size=256, num_workers=24)):
-            features = model(images.cuda())
-            all_features.append(features)
-        return torch.cat(all_features)
-
-    model, preprocess = unicom.load("ViT-B/16")
-    model = model.cuda()
-    testset = SimpleFolderDataset(images_dir, transform=preprocess)
-
-    torch_embedding = get_features(testset, model)
-    torch_embedding = normalize(torch_embedding)
-    embeddings = torch_embedding.cpu().numpy()
-    return testset.images, embeddings
-
-
-def save_embeddings(filename: str, data: tuple[list[str], np.ndarray]) -> None:
-    with h5py.File(filename, 'w') as f:
-        for k, v in zip(data[0], data[1]):
-            f.create_dataset(k, data=v)
-
-
-def read_embeddings(filename: str) -> tuple[list[str], np.ndarray]:
-    with h5py.File(filename, 'r') as f:
-        keys = list(f.keys())
-        values = [f[k][()] for k in keys]
-    return keys, np.array(values)
-
-
-def find_close(name: str, embeddings: tuple[list[str], np.ndarray]) -> list[tuple[str, float]]:
+def find_close(name: str, embeddings: Embeddings) -> list[tuple[str, float]]:
     """
     finds the top_k closest images to the given name
     returns a list of tuples (name, score), sorted by score
     """
-    names, embeddings = embeddings
+    names = embeddings.names
+    vectors = embeddings.vectors
     idx = names.index(name)
-    scores = np.dot(embeddings, embeddings[idx])
+    scores = np.dot(vectors, vectors[idx])
     result = [(names[i], scores[i]) for i in range(len(names)) if i != idx]
     sort = sorted(result, key=lambda x: x[1], reverse=True)
     return sort
@@ -86,7 +33,7 @@ def merge_close(request: set[str], candidates: list[list[tuple[str, float]]]) ->
     return sort
 
 
-def find_close_to_many(names: set[str], embeddings: tuple[list[str], np.ndarray]) -> list[tuple[str, float]]:
+def find_close_to_many(names: set[str], embeddings: Embeddings) -> list[tuple[str, float]]:
     """
     finds the top_k closest images to the given list of names
     returns a list of tuples (name, score), sorted by score
