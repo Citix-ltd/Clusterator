@@ -2,13 +2,13 @@ import numpy as np
 import os
 import h5py
 from dataclasses import dataclass
-from typing import TypeAlias
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.functional import normalize
 from tqdm import tqdm
 from PIL import Image
 import unicom
+from sklearn.decomposition import PCA
 
 
 @dataclass(frozen=True)
@@ -18,7 +18,7 @@ class Embeddings:
 
 
 class _SimpleImagesListDataset(Dataset):
-    def __init__(self, data_root:str, images: list[str], transform=None):
+    def __init__(self, data_root: str, images: list[str], transform=None):
         self.data_root = data_root
         self.images = images
         self.transform = transform
@@ -35,6 +35,7 @@ class _SimpleImagesListDataset(Dataset):
 
 
 class Embedder():
+    embedding_dim: int = 512
     batch_size: int = 256
     num_workers: int = 12
     device: str = 'cuda:0'
@@ -53,6 +54,10 @@ class Embedder():
             torch_embedding = torch.cat(all_features)
             torch_embedding = normalize(torch_embedding)
             embeddings = torch_embedding.cpu().numpy()
+            assert Embedder.embedding_dim <= embeddings.shape[1], "Embedder network output dimension is too small"
+            if Embedder.embedding_dim < embeddings.shape[1]:
+                pca = PCA(n_components=Embedder.embedding_dim)
+                embeddings = pca.fit_transform(embeddings)
         return Embeddings(images, embeddings)
 
     @staticmethod
