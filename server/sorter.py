@@ -23,13 +23,16 @@ def merge_close(request: set[str], candidates: list[list[tuple[str, float]]]) ->
     returns a list of tuples (name, score), sorted by score
     """
     candidates = sum(candidates, [])
-    seen = set()
-    result = []
-    for name, score in candidates:
-        if name not in seen and name not in request:
-            result.append((name, score))
-            seen.add(name)
-    sort = sorted(result, key=lambda x: x[1], reverse=True)
+    merged: dict[str, float] = {}
+    for candidate in candidates:
+        name, score = candidate
+        if name in request:
+            continue
+        if name in merged:
+            merged[name] = max(merged[name], score)
+        else:
+            merged[name] = score
+    sort = sorted(list(merged.items()), key=lambda x: x[1], reverse=True)
     return sort
 
 
