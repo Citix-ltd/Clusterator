@@ -2,7 +2,7 @@ from cluster import Cluster
 import os
 import shutil
 
-from sorter import find_close_to_many
+from numpy_sorter import find_close_to_many
 from embedder import Embedder, Embeddings
 
 
@@ -85,9 +85,9 @@ class Application():
         self.clusters[cluster_name] = Cluster(cluster_name, cluster_path)
 
     def sort(self, items: set[str]) -> list[str]:
-        result = find_close_to_many(items, self.embeddings)
+        result = find_close_to_many(items, self.embeddings, RESPONSE_LIMIT)
         result = [r[0] for r in result]
-        return result[:RESPONSE_LIMIT]
+        return result
 
     def _move2cluster(self, from_cluster: Cluster, to_cluster: Cluster, items: list[str]) -> None:
         assert len(items) > 0
