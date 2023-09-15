@@ -9,7 +9,7 @@ from embedder import Embedder, Embeddings
 UNSORTED_CLASS = "unsorted"
 FILE_FORMAT = ".jpg"
 EMBEDDINGS_FILENAME = "embeddings.h5"
-RESPONSE_LIMIT = 256
+RESPONSE_LIMIT = 512
 
 
 class Application():
@@ -69,6 +69,9 @@ class Application():
             item_path = os.path.join(cluster.path, item)
             if os.path.isfile(item_path) and item.endswith(FILE_FORMAT):
                 cluster.items.add(item)
+        if len(cluster.items) > 0:
+            cluster.preview = cluster.items.pop()
+            cluster.items.add(cluster.preview)
 
     def get_cluster_items(self, cluster_name: str) -> list[str]:
         assert cluster_name in self.clusters
