@@ -1,5 +1,6 @@
 from cluster import Cluster
 import os
+import random
 import shutil
 
 from numpy_sorter import find_close_to_many
@@ -9,7 +10,7 @@ from embedder import Embedder, Embeddings
 UNSORTED_CLASS = "unsorted"
 FILE_FORMAT = ".jpg"
 EMBEDDINGS_FILENAME = "embeddings.h5"
-RESPONSE_LIMIT = 512
+RESPONSE_LIMIT = 768
 
 
 class Application():
@@ -75,7 +76,9 @@ class Application():
 
     def get_cluster_items(self, cluster_name: str) -> list[str]:
         assert cluster_name in self.clusters
-        return list(self.clusters[cluster_name].items)[:RESPONSE_LIMIT]
+        l = list(self.clusters[cluster_name].items)
+        random.shuffle(l)
+        return l[:RESPONSE_LIMIT]
 
     def unsorted2cluster(self, items: list[str], cluster_name: str) -> None:
         assert cluster_name in self.clusters
@@ -90,7 +93,16 @@ class Application():
     def sort(self, items: set[str]) -> list[str]:
         result = find_close_to_many(items, self.embeddings, RESPONSE_LIMIT)
         result = [r[0] for r in result]
-        return result
+        filtered = []
+        for item in result:
+            if item in self.unsorted.items:
+                filtered.append(item)
+        return filtered
+    
+    def sort_by_class(self, cluster_name: str) -> list[str]:
+        assert cluster_name in self.clusters
+        cluster = self.clusters[cluster_name]
+        return self.sort(cluster.items)
 
     def _move2cluster(self, from_cluster: Cluster, to_cluster: Cluster, items: list[str]) -> None:
         assert len(items) > 0

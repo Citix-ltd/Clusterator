@@ -7,7 +7,7 @@ import Divider from '@mui/material/Divider';
 
 
 
-const ENDPOINT = "http://127.0.0.1:3001/api";
+const ENDPOINT = "http://localhost:3001/api";
 
 interface ImageProps {
   label: string;
@@ -71,45 +71,58 @@ function App() {
   const [classes, setClasses] = React.useState<LabelClass[]>([]);
   const [ungrouped, setUngrouped] = React.useState<string[]>([]);
   const [activeClass, setActiveClass] = React.useState<LabelClass | null>(null);
-  const [annotated, setAnnotated] = React.useState<string[]>([]);
+  const [staged, setAnnotated] = React.useState<string[]>([]);
   const [selected, setSelected] = React.useState<Set<string>>(() => new Set());
   const inputClassName = React.useRef<HTMLInputElement>();
 
   /*
     Initial load
   */
-  React.useEffect(() => {
-    fetch(ENDPOINT + "/classes").then(response => response.json()).then(json => {
-      const data = json as LabelClassResponse;
-      setClasses(data.classes);
-      if (data["classes"].length > 0) {
-        setActiveClass(data.classes[0])
-      }
-    }
-    )
-  }, [])
-  React.useEffect(() => {
+  function loadRandomUnsorted() {
     fetch(ENDPOINT + "/classes/unsorted").then(response => response.json()).then(json => {
       const data = json as FilesResponse;
       setUngrouped(data.files);
     })
+  }
+  React.useEffect(() => {
+    fetch(ENDPOINT + "/classes").then(response => response.json()).then(json => {
+      const data = json as LabelClassResponse;
+      setClasses(data.classes);
+    })
   }, [])
+  React.useEffect(loadRandomUnsorted, [])
 
   /*
     Actions
   */
   React.useEffect(() => {
-    if (annotated.length === 0) {
+    if (!activeClass || staged.length > 0) {
+      return;
+    }
+    if (!activeClass.preview) {
+      loadRandomUnsorted();
+      return;
+    }
+    fetch(ENDPOINT + "/sort_by_class", {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ class: activeClass.name })
+    }).then(response => response.json()).then(
+      data => setUngrouped(data["files"])
+    )
+  }, [activeClass]);
+  React.useEffect(() => {
+    if (staged.length === 0) {
       return;
     }
     fetch(ENDPOINT + "/sort", {
       method: 'post',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: annotated })
+      body: JSON.stringify({ files: staged })
     }).then(response => response.json()).then(
       data => setUngrouped(data["files"])
     )
-  }, [annotated]);
+  }, [staged]);
   function onCreateNewClassClick() {
     const class_name = inputClassName.current?.value;
     if (class_name === undefined || class_name.length === 0) {
@@ -129,7 +142,7 @@ function App() {
     fetch(ENDPOINT + "/move", {
       method: "post",
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ files: annotated, class: activeClass?.name })
+      body: JSON.stringify({ files: staged, class: activeClass?.name })
     }).then(() => {
       fetch(ENDPOINT + "/classes").then(response => response.json()).then(
         data => { setClasses(data["classes"]); setActiveClass(data["classes"][0]["class"]) }
@@ -139,17 +152,10 @@ function App() {
   }
   const handleKeyPress = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter') return;
-    const newAnnotated = [...annotated, ...Array.from(selected)];
+    const newAnnotated = [...staged, ...Array.from(selected)];
     setAnnotated(newAnnotated);
     setSelected(new Set());
   };
-  function onUngroupedClicked(filename: string) {
-    if (annotated.includes(filename)) {
-      return;
-    }
-    setAnnotated([...annotated, filename])
-    setUngrouped(ungrouped.filter((i) => { return i != filename }));
-  }
 
   /*
     Selection
@@ -202,7 +208,7 @@ function App() {
         <h2>Staged</h2>
         <div className="flex-wrap">
           {
-            annotated.map((x) => {
+            staged.map((x) => {
               return (
                 <div key={x}>
                   <Image label="unsorted" filename={x} />

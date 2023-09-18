@@ -41,7 +41,12 @@ def make_api(app: Application) -> Blueprint:
         data = request.get_json()
         result = app.sort(set(data["files"]))
         return {"files" : result}
-
+    
+    @api.route('/sort_by_class', methods=["POST"])
+    def sort_files_by_class():
+        data = request.get_json()
+        result = app.sort_by_class(data["class"])
+        return {"files" : result}
 
     @api.route('/move', methods= ["POST"])
     def move_files():
