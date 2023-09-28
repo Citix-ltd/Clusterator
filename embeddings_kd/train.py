@@ -15,15 +15,17 @@ from datasource import ImagesDataModule
 def train(
     dataset_root: str = 'data/',  
     
-    name: str|None = 'naive attempt',
+    name: str|None = None,
 
     loss: str = "l2",
-    lr: float = 4e-3, 
-    weight_decay: float = 1e-4,
+    normalize: bool = False,
+
+    lr: float = 1e-3, 
+    weight_decay: float = 1e-5,
     lr_scheduler: str = "step",
     pretrained: bool = True,
 
-    batch_size: int = 80,
+    batch_size: int = 84,
     max_epochs: int = 64,
     seed: int = 7744,
 ) -> None:
@@ -33,6 +35,7 @@ def train(
     pl.seed_everything(seed)
     model = EmbeddingModule(
         loss=loss,
+        normalize=normalize,
         lr = lr,
         weight_decay = weight_decay,
         lr_scheduler=lr_scheduler,
@@ -60,7 +63,7 @@ def train(
             checkpoint_cb,
             LearningRateMonitor(logging_interval='step'),
         ],
-        check_val_every_n_epoch=1,
+        val_check_interval=0.1,
     )
     trainer.fit(model, datamodule=datamodule)
 

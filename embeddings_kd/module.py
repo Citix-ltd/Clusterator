@@ -37,6 +37,7 @@ class EmbeddingModule(L.LightningModule):
     def __init__(
         self,
         loss: str,
+        normalize: bool,
         lr: float,
         weight_decay: float,
         lr_scheduler: str | None,
@@ -45,6 +46,7 @@ class EmbeddingModule(L.LightningModule):
         super().__init__()
         assert loss in losses, f'Unknown loss {loss}'
         self.loss_function = losses[loss]
+        self.normalize = normalize
         self.lr = lr
         self.weight_decay = weight_decay
         self.lr_scheduler = lr_scheduler
@@ -74,23 +76,28 @@ class EmbeddingModule(L.LightningModule):
         else:
             assert self.lr_scheduler is None, f'Unknown lr_scheduler {self.lr_scheduler}'
         return config
-    
-    def _compute_step(self, x):
+
+    def training_step(self, x, batch_idx):
         student_embeddings = self(x)
         teacher_embeddings = self.teacher_model(x)
 
-        student_embeddings = F.normalize(student_embeddings, p=2, dim=1)
-        teacher_embeddings = F.normalize(teacher_embeddings, p=2, dim=1)
+        if self.normalize:
+            student_embeddings = F.normalize(student_embeddings, p=2, dim=1)
+            teacher_embeddings = F.normalize(teacher_embeddings, p=2, dim=1)
 
         loss = self.loss_function(student_embeddings, teacher_embeddings)
-        return loss
-
-    def training_step(self, x, batch_idx):
-        loss = self._compute_step(x)
         self.log('train_loss', loss, prog_bar=True)
         return loss
     
     def validation_step(self, x, batch_idx):
-        loss = self._compute_step(x)
-        self.log('val_loss', loss, prog_bar=True)
-        return loss
+        student_embeddings = self(x)
+        teacher_embeddings = self.teacher_model(x)
+        loss_full = self.loss_function(student_embeddings, teacher_embeddings)
+
+        student_embeddings = F.normalize(student_embeddings, p=2, dim=1)
+        teacher_embeddings = F.normalize(teacher_embeddings, p=2, dim=1)
+        loss_norm = self.loss_function(student_embeddings, teacher_embeddings)
+
+        self.log('val_loss_full', loss_full, prog_bar=True)
+        self.log('val_loss', loss_norm, prog_bar=True)
+        return loss_full
