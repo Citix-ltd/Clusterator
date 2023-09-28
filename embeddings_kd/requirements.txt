@@ -1,0 +1,15 @@
+albumentations
+clearml
+fire
+matplotlib
+numpy
+opencv-python
+pandas
+h5py
+Pillow
+lightning[extra]
+torch
+torchvision
+tqdm
+timm
+git+https://github.com/deepglint/unicom.git
