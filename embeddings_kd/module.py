@@ -52,7 +52,10 @@ class EmbeddingModule(L.LightningModule):
         self.lr_scheduler = lr_scheduler
         self.student_model = MobileEmbeddingNet(pretrained=pretrained)
         teacher_model, _ = unicom.load("ViT-B/16")
-        self.teacher_model = teacher_model.eval().to(self.device)
+        teacher_model = teacher_model.eval().to('cuda:0')
+        teacher_model.requires_grad_(False) 
+        # hack to prevent lightning from calling .train() and saving in checkpoints
+        self.teacher_model = [teacher_model]
 
     def forward(self, x):
         return self.student_model(x)
@@ -79,7 +82,8 @@ class EmbeddingModule(L.LightningModule):
 
     def training_step(self, x, batch_idx):
         student_embeddings = self(x)
-        teacher_embeddings = self.teacher_model(x)
+        with torch.no_grad():
+            teacher_embeddings = self.teacher_model[0](x)
 
         if self.normalize:
             student_embeddings = F.normalize(student_embeddings, p=2, dim=1)
@@ -91,7 +95,8 @@ class EmbeddingModule(L.LightningModule):
     
     def validation_step(self, x, batch_idx):
         student_embeddings = self(x)
-        teacher_embeddings = self.teacher_model(x)
+        with torch.no_grad():
+            teacher_embeddings = self.teacher_model[0](x)
         loss_full = self.loss_function(student_embeddings, teacher_embeddings)
 
         student_embeddings = F.normalize(student_embeddings, p=2, dim=1)

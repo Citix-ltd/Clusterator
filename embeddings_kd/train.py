@@ -25,7 +25,7 @@ def train(
     lr_scheduler: str = "step",
     pretrained: bool = True,
 
-    batch_size: int = 84,
+    batch_size: int = 96,
     max_epochs: int = 64,
     seed: int = 7744,
 ) -> None:
