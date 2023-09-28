@@ -78,6 +78,7 @@ class Application():
         assert cluster_name in self.clusters
         l = list(self.clusters[cluster_name].items)
         random.shuffle(l)
+        l = [{'n': name, 's': 0.0} for name in l]
         return l[:RESPONSE_LIMIT]
 
     def unsorted2cluster(self, items: list[str], cluster_name: str) -> None:
@@ -90,14 +91,13 @@ class Application():
         os.mkdir(cluster_path)
         self.clusters[cluster_name] = Cluster(cluster_name, cluster_path)
 
-    def sort(self, items: set[str]) -> list[str]:
-        result = find_close_to_many(items, self.embeddings, RESPONSE_LIMIT)
-        result = [r[0] for r in result]
+    def sort(self, items: set[str]) -> list[(str, float)]:
+        result: list[(str, float)] = find_close_to_many(items, self.embeddings, RESPONSE_LIMIT)
         filtered = []
         for item in result:
-            if item in self.unsorted.items:
+            if item[0] in self.unsorted.items:
                 filtered.append(item)
-        return filtered
+        return [{'n': name, 's': float(score)} for (name, score) in filtered]
     
     def sort_by_class(self, cluster_name: str) -> list[str]:
         assert cluster_name in self.clusters

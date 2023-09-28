@@ -61,15 +61,19 @@ interface LabelClass {
 interface LabelClassResponse {
   classes: LabelClass[];
 }
+interface SortedItem {
+  n: string;
+  s: number;
+}
 interface FilesResponse {
-  files: string[];
+  files: SortedItem[];
 }
 
 
 
 function App() {
+  const [ungrouped, setUngrouped] = React.useState<SortedItem[]>([]);
   const [classes, setClasses] = React.useState<LabelClass[]>([]);
-  const [ungrouped, setUngrouped] = React.useState<string[]>([]);
   const [activeClass, setActiveClass] = React.useState<LabelClass | null>(null);
   const [staged, setAnnotated] = React.useState<string[]>([]);
   const [selected, setSelected] = React.useState<Set<string>>(() => new Set());
@@ -228,11 +232,12 @@ function App() {
             ungrouped.map((x) => {
               return (
                 <div
-                  className={selected.has(x) ? 'selected selectable' : 'selectable'}
-                  key={x}
-                  data-key={x}
+                  className={selected.has(x.n) ? 'selected selectable' : 'selectable'}
+                  key={x.n}
+                  data-key={x.n}
                 >
-                  <Image label="unsorted" filename={x} />
+                  <Image label="unsorted" filename={x.n} />
+                  {x.s.toFixed(3)}
                 </div>)
             })
           }

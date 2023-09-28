@@ -4,11 +4,11 @@ import h5py
 from dataclasses import dataclass
 import torch
 from torch.utils.data import DataLoader, Dataset
-from torch.nn.functional import normalize
 from tqdm import tqdm
 from PIL import Image
 import unicom
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import normalize
 
 
 @dataclass(frozen=True)
@@ -52,12 +52,14 @@ class Embedder():
                 features = model(data.to(Embedder.device))
                 all_features.append(features)
             torch_embedding = torch.cat(all_features)
-            torch_embedding = normalize(torch_embedding)
             embeddings = torch_embedding.cpu().numpy()
+            embeddings = normalize(embeddings, axis=1, norm='l2')
             assert Embedder.embedding_dim <= embeddings.shape[1], "Embedder network output dimension is too small"
             if Embedder.embedding_dim < embeddings.shape[1]:
                 pca = PCA(n_components=Embedder.embedding_dim)
                 embeddings = pca.fit_transform(embeddings)
+                embeddings = normalize(embeddings, axis=1, norm='l2')
+        del model, dataset
         return Embeddings(images, embeddings)
 
     @staticmethod

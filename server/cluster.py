@@ -8,4 +8,3 @@ class Cluster():
     path: str
     preview: Optional[str] = None
     items: set[str] = field(default_factory=set)
-    
