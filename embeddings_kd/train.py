@@ -51,7 +51,7 @@ def train(
     stoping_cb = EarlyStopping(monitor="val_loss", patience=24, mode="min")
     checkpoint_cb = ModelCheckpoint(
         monitor='val_loss',
-        filename='ME-{epoch:02d}-{val_f1:.4f}',
+        filename='ME-{epoch:02d}-{val_loss:.5f}',
         save_top_k=3,
         mode='min',
     )
