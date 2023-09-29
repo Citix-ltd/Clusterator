@@ -16,6 +16,7 @@ class MobileEmbeddingNet(nn.Module):
         embedding_size=768,
     ):
         super().__init__()
+        weights = None
         if pretrained:
             weights = models.MobileNet_V2_Weights.IMAGENET1K_V1
         self.backbone = models.mobilenet_v2(weights=weights)
@@ -44,6 +45,7 @@ class EmbeddingModule(L.LightningModule):
         pretrained: bool,
     ) -> None:
         super().__init__()
+        self.save_hyperparameters()
         assert loss in losses, f'Unknown loss {loss}'
         self.loss_function = losses[loss]
         self.normalize = normalize
