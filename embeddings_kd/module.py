@@ -51,11 +51,15 @@ class EmbeddingModule(L.LightningModule):
         self.weight_decay = weight_decay
         self.lr_scheduler = lr_scheduler
         self.student_model = MobileEmbeddingNet(pretrained=pretrained)
+
         teacher_model, _ = unicom.load("ViT-B/16")
-        teacher_model = teacher_model.eval().to('cuda:0')
+        teacher_model.eval()
         teacher_model.requires_grad_(False) 
         # hack to prevent lightning from calling .train() and saving in checkpoints
         self.teacher_model = [teacher_model]
+
+    def on_fit_start(self) -> None:
+        self.teacher_model[0].to(self.device)
 
     def forward(self, x):
         return self.student_model(x)
